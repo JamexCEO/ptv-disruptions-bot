@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+seen_disruptions.json
+seen_disruptions.json.tmp
+*.key
+*.pem
+discord_app.db*
+.discord-app.pid
+discord-app.log
+discord-app-error.log

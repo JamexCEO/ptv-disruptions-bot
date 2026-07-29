@@ -1,0 +1,24 @@
+[Unit]
+Description=MHS Train Club PTV disruption bot
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ptvbot
+Group=ptvbot
+WorkingDirectory=/opt/ptv-disruptions
+ExecStart=/opt/ptv-disruptions/.venv/bin/python /opt/ptv-disruptions/discord_app.py
+Restart=always
+RestartSec=15
+Environment=PYTHONUNBUFFERED=1
+Environment=DATA_FILE=/var/lib/ptv-disruptions/discord_app.db
+StateDirectory=ptv-disruptions
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ptv-disruptions
+
+[Install]
+WantedBy=multi-user.target
