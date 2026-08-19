@@ -35,9 +35,23 @@ MAX_ATTEMPTS = 3
 USER_AGENT = "MHS-Train-Club-Disruptions/1.0"
 
 COLOURS = {
-    "current": 0xE74C3C,
-    "planned": 0xF39C12,
     "information": 0x3498DB,
+    "hurstbridge": 0xBE1014,
+    "mernda": 0xBE1014,
+    "belgrave": 0x152C6B,
+    "lilydale": 0x152C6B,
+    "alamein": 0x152C6B,
+    "glen waverley": 0x152C6B,
+    "frankston": 0x028430,
+    "stony point": 0x028430,
+    "cranbourne": 0x279FD5,
+    "pakenham": 0x279FD5,
+    "sunbury": 0x279FD5,
+    "werribee": 0xF178AF,
+    "sandringham": 0xF178AF,
+    "williamstown": 0xF178AF,
+    "craigieburn": 0xFFBE00,
+    "upfield": 0xFFBE00
 }
 
 
@@ -132,7 +146,7 @@ def format_date(value: Any) -> str | None:
             parsed = parsed.replace(tzinfo=MELBOURNE)
         local = parsed.astimezone(MELBOURNE)
         hour = local.strftime("%I").lstrip("0") or "0"
-        return f"{local:%d %b %Y}, {hour}:{local:%M %p} {local:%Z}"
+        return f"{local:%d %b %Y}, {hour}:{local:%M %p}"
     except (ValueError, TypeError):
         return str(value)
 
@@ -147,13 +161,23 @@ def route_names(disruption: dict[str, Any]) -> str:
             names.append(str(name))
     return ", ".join(names) if names else "Network-wide / unspecified"
 
+def route_identify(disruption: dict[str, Any]) -> str:
+    names: list[str] = []
+    for route in disruption.get("routes") or []:
+        if not isinstance(route, dict):
+            continue
+        name = route.get("route_name") or route.get("route_number")
+        if name and str(name) not in names:
+            names.append(str(name))
+    return names[0] if names else ""
 
 def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
     status = str(disruption.get("disruption_status") or "Information")
+    line = route_identify(disruption)
     fields = [
         {"name": "Status", "value": status, "inline": True},
         {
-            "name": "Routes",
+            "name": "Lines",
             "value": clean_text(route_names(disruption), 1024),
             "inline": False,
         },
@@ -165,19 +189,36 @@ def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
     if end:
         fields.append({"name": "Until", "value": end, "inline": True})
 
-    embed: dict[str, Any] = {
-        "title": clean_text(disruption.get("title") or "PTV disruption", 256),
-        "description": clean_text(disruption.get("description"), 4096),
-        "color": COLOURS.get(status.casefold(), COLOURS["information"]),
-        "fields": fields,
-        "footer": {
-            "text": f"Transport Victoria • ID {disruption.get('disruption_id', 'unknown')}"
-        },
-    }
-    url = disruption.get("url")
-    if url:
-        embed["url"] = str(url)
-    return embed
+    title  = str(clean_text(disruption.get("title") or "PTV disruption", 256))
+    desc = str(clean_text(disruption.get("description"), 4096))
+    if title != desc:
+        embed: dict[str, Any] = {
+            "title": clean_text(disruption.get("title") or "PTV disruption", 256),
+            "description": clean_text(disruption.get("description"), 4096),
+            "color": COLOURS.get(line.casefold(), COLOURS["information"]),
+            "fields": fields,
+            "footer": {
+                "text": f"Transport Victoria • ID {disruption.get('disruption_id', 'unknown')}"
+            },
+        }
+        url = disruption.get("url")
+        if url:
+            embed["url"] = str(url)
+        return embed
+    
+    else:
+        embed: dict[str, Any] = {
+            "title": clean_text(disruption.get("title") or "PTV disruption", 256),
+            "color": COLOURS.get(line.casefold(), COLOURS["information"]),
+            "fields": fields,
+            "footer": {
+                "text": f"Transport Victoria • ID {disruption.get('disruption_id', 'unknown')}"
+            },
+        }
+        url = disruption.get("url")
+        if url:
+            embed["url"] = str(url)
+        return embed
 
 
 def normalize_route_name(value: Any) -> str:
