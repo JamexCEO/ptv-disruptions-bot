@@ -161,10 +161,19 @@ def route_names(disruption: dict[str, Any]) -> str:
             names.append(str(name))
     return ", ".join(names) if names else "Network-wide / unspecified"
 
+def route_identify(disruption: dict[str, Any]) -> str:
+    names: list[str] = []
+    for route in disruption.get("routes") or []:
+        if not isinstance(route, dict):
+            continue
+        name = route.get("route_name") or route.get("route_number")
+        if name and str(name) not in names:
+            names.append(str(name))
+    return names[0]
 
 def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
     status = str(disruption.get("disruption_status") or "Information")
-    line = str(route_names(disruption), 1024)
+    line = route_identify(disruption)
     fields = [
         {"name": "Status", "value": status, "inline": True},
         {
