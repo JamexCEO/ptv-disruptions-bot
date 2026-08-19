@@ -169,7 +169,7 @@ def route_identify(disruption: dict[str, Any]) -> str:
         name = route.get("route_name") or route.get("route_number")
         if name and str(name) not in names:
             names.append(str(name))
-    return names[0]
+    return names[0] if names else ""
 
 def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
     status = str(disruption.get("disruption_status") or "Information")
