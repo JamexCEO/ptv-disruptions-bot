@@ -36,6 +36,8 @@ USER_AGENT = "MHS-Train-Club-Disruptions/1.0"
 
 COLOURS = {
     "information": 0x3498DB,
+    "tram": 0x78BE20,
+    "vline": 0x8F1A95,
     "hurstbridge": 0xBE1014,
     "mernda": 0xBE1014,
     "belgrave": 0x152C6B,
@@ -171,9 +173,21 @@ def route_identify(disruption: dict[str, Any]) -> str:
             names.append(str(name))
     return names[0] if names else ""
 
+
+def disruption_colour(disruption: dict[str, Any]) -> int:
+    """Return the route colour, falling back to the disruption's transport mode."""
+    line_colour = COLOURS.get(route_identify(disruption).casefold())
+    if line_colour is not None:
+        return line_colour
+
+    mode_colour = {
+        "metro_tram": "tram",
+        "regional_train": "vline",
+    }.get(disruption.get("_ptv_mode"))
+    return COLOURS.get(mode_colour or "information", COLOURS["information"])
+
 def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
     status = str(disruption.get("disruption_status") or "Information")
-    line = route_identify(disruption)
     fields = [
         {"name": "Status", "value": status, "inline": True},
         {
@@ -195,7 +209,7 @@ def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
         embed: dict[str, Any] = {
             "title": clean_text(disruption.get("title") or "PTV disruption", 256),
             "description": clean_text(disruption.get("description"), 4096),
-            "color": COLOURS.get(line.casefold(), COLOURS["information"]),
+            "color": disruption_colour(disruption),
             "fields": fields,
             "footer": {
                 "text": f"Transport Victoria • ID {disruption.get('disruption_id', 'unknown')}"
@@ -209,7 +223,7 @@ def make_embed(disruption: dict[str, Any]) -> dict[str, Any]:
     else:
         embed: dict[str, Any] = {
             "title": clean_text(disruption.get("title") or "PTV disruption", 256),
-            "color": COLOURS.get(line.casefold(), COLOURS["information"]),
+            "color": disruption_colour(disruption),
             "fields": fields,
             "footer": {
                 "text": f"Transport Victoria • ID {disruption.get('disruption_id', 'unknown')}"
